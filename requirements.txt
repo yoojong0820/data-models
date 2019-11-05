@@ -1,3 +1,7 @@
 numpy
 pandas
 boto3
+scikit-learn
+requests
+joblib
+flask

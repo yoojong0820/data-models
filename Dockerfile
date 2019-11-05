@@ -18,4 +18,6 @@ COPY . /app
 
 ENTRYPOINT [ "python" ]
 
+EXPOSE 5000
+
 CMD [ "src/main/python/server/app.py" ]

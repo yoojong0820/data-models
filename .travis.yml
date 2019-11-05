@@ -10,6 +10,9 @@ notifications:
 python:
     - 3.7
 
+before_install:
+  - chmod +x build.sh
+
 install:
   - pip install -r requirements.txt
 

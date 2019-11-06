@@ -1,10 +1,9 @@
-from pipeline.sample import SampleTitanicModel
-from utils.display import numpy_array_display_setting
+from titanic_pipeline.model_pipeline import TitanicModelPipeline
 
 
+# Execute this pipeline offline to update feature extractors & model in AWS S3
 def main():
-    numpy_array_display_setting()
-    pipeline = SampleTitanicModel(
+    pipeline = TitanicModelPipeline(
         bucket_name='team00-test-bucket',
         training_data_key='titanic/train.csv',
         test_data_key='titanic/test.csv'

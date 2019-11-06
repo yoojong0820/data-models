@@ -1,34 +1,31 @@
-import numpy as np
-import pandas as pd
-
-from feature_extractor.feature_extractor import FeatureExtractor
-from model.logistic_regression import LogisticRegressionModel
-from utils.display import numpy_array_display_setting
+import requests
 
 
 def main():
-    numpy_array_display_setting()
-
     # Single sample request coming from back-end
-    sample_test_data = pd.DataFrame([
-        [892, 3, 'Kelly, Mr.James', 'male', 34.5, 0, 0, 330911, 7.8292, np.NaN, 'Q']
-    ], columns=[
-        'PassengerId', 'Pclass', 'Name', 'Sex', 'Age', 'SibSp', 'Parch', 'Ticket', 'Fare', 'Cabin', 'Embarked'
-    ])
+    sample_test_data = {
+        'PassengerId': '892',
+        'Pclass': '3',
+        'Name': 'Kelly, Mr.James',
+        'Sex': 'male',
+        'Age': '34.5',
+        'SibSp': '0',
+        'Parch': '0',
+        'Ticket': '330911',
+        'Fare': '7.8292',
+        'Cabin': 'NULL',
+        'Embarked': 'Q'
+    }
 
-    # Point to the correct bucket to load feature extractors and model
-    bucket_name = 'team00-test-bucket'
-
-    # Load feature extractors and model
-    column_transformer = FeatureExtractor.load_from_s3(bucket_name, 'titanic/column_transformer.pkl')
-    model = LogisticRegressionModel.load_from_s3(bucket_name, 'titanic/model.pkl')
-
-    # Extract features
-    transformed = column_transformer.transform(sample_test_data)
-
-    # Get predictions
-    estimate = model.predict_proba(transformed)
-    print(estimate)
+    r = requests.post(
+        'http://localhost:5000/predict',
+        headers={
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        json=sample_test_data
+    )
+    print(r.json())
 
 
 if __name__ == '__main__':

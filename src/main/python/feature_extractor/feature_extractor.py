@@ -1,13 +1,12 @@
 import tempfile
 
-import boto3
 from joblib import dump, load
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
-from utils.aws import get_session
+from utils.aws import build_s3
 
 
 class FeatureExtractor:
@@ -35,8 +34,7 @@ class FeatureExtractor:
             ('cat', categorical_transformer, categorical_features)
         ])
 
-        session = get_session()
-        self.s3 = session.resource('s3')
+        self.s3 = build_s3()
 
     def fit(self):
         return self.column_transformer.fit(self.x_train)
@@ -58,12 +56,11 @@ class FeatureExtractor:
             fp.close()
 
     @staticmethod
-    def load_from_s3(bucket_name, key):
-        session = get_session()
-        s3 = session.resource('s3')
+    def load_from_s3(s3, bucket_name, key):
         with tempfile.TemporaryFile() as fp:
             s3.Bucket(bucket_name).download_fileobj(Fileobj=fp, Key=key)
             fp.seek(0)
             column_transformer = load(fp)
             fp.close()
         return column_transformer
+

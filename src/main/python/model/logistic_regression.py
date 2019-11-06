@@ -1,14 +1,14 @@
 import tempfile
 
-import boto3
-from sklearn.linear_model import LogisticRegression
 from joblib import dump, load
+from sklearn.linear_model import LogisticRegression
 
-from utils.aws import get_session
+from utils.aws import build_s3
 
 
 class LogisticRegressionModel:
     def __init__(self, x_train, y_train):
+        self.s3 = build_s3()
         self.model = LogisticRegression(solver='lbfgs')
         self.x_train = x_train
         self.y_train = y_train
@@ -23,21 +23,21 @@ class LogisticRegressionModel:
         return self.model.score(self.x_train, self.y_train)
 
     def save_to_s3(self, bucket_name, key):
-        session = get_session()
-        s3 = session.resource('s3')
         with tempfile.TemporaryFile() as fp:
             dump(self.model, fp)
             fp.seek(0)
-            s3.Bucket(bucket_name).put_object(Body=fp.read(), Bucket=bucket_name, Key=key)
+            self.s3.Bucket(bucket_name).put_object(Body=fp.read(), Bucket=bucket_name, Key=key)
             fp.close()
 
     @staticmethod
-    def load_from_s3(bucket_name, key):
-        session = get_session()
-        s3 = session.resource('s3')
+    def load_from_s3(s3, bucket_name, key):
         with tempfile.TemporaryFile() as fp:
             s3.Bucket(bucket_name).download_fileobj(Fileobj=fp, Key=key)
             fp.seek(0)
             model = load(fp)
             fp.close()
         return model
+
+    @staticmethod
+    def save_predictions_to_s3(df, bucket_name, key):
+        df.to_csv(f's3://{bucket_name}/{key}', index=False)

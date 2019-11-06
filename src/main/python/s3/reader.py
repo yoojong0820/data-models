@@ -1,37 +1,32 @@
-import os
-import boto3
-import pandas as pd
-
 from io import StringIO
 
-from utils.aws import get_session
+import pandas as pd
+
+from utils.aws import build_s3
 from utils.display import pandas_df_display_setting
 
 
 class S3Reader:
-    def __init__(self, bucket_name, training_data_key, test_data_key):
-        session = get_session()
-        self.s3 = session.resource('s3')
+    def __init__(self, bucket_name, key):
+        """
+        This reader can only read CSV file from AWS S3 - read & turn it into pandas data frame
+        TODO: Add capability to process other formats (i.e. json, text, avro, parquet, etc.)
+        :param bucket_name: AWS S3 bucket name
+        :param key: AWS S3 key to locate the CSV file
+        """
+        self.s3 = build_s3()
         self.bucket_name = bucket_name
-        self.training_data_key = training_data_key
-        self.test_data_key = test_data_key
+        self.key = key
 
     def fetch_objects(self):
-        training = pd.DataFrame()
-        test = pd.DataFrame()
+        df = pd.DataFrame()
+        filtered = list(self.s3.Bucket(self.bucket_name).objects.filter(Prefix=self.key))
 
-        filtered_training = list(self.s3.Bucket(self.bucket_name).objects.filter(Prefix=self.training_data_key))
-        filtered_test = list(self.s3.Bucket(self.bucket_name).objects.filter(Prefix=self.test_data_key))
+        if len(filtered) > 0:
+            ls = StringIO(filtered[0].get()['Body'].read().decode('utf-8'))
+            df = pd.read_csv(ls, header=0)
 
-        if len(filtered_training) > 0:
-            ls = StringIO(filtered_training[0].get()['Body'].read().decode('utf-8'))
-            training = pd.read_csv(ls, header=0)
-
-        if len(filtered_test) > 0:
-            ls = StringIO(filtered_test[0].get()['Body'].read().decode('utf-8'))
-            test = pd.read_csv(ls, header=0)
-
-        return training, test
+        return df
 
     def execute(self):
         pandas_df_display_setting()
